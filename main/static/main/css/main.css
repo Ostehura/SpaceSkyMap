@@ -62,22 +62,3 @@ main .features {
 main .features h1 {font-size: 50px;}
 main .features p {max-width: 600px; margin: 20px auto;}
 
-main {
-    padding: 40px 60px;
-    color: #fff;
-}
-
-.auth-container {
-    margin-top: 30px;
-}
-
-.auth-card {
-    background-color: #050b2a;   /* темнее, чем фон main */
-    border: 1px solid #222a4d;
-    color: #fff;
-}
-
-.auth-card .form-label,
-.auth-card .form-text {
-    color: #ccc;
-}

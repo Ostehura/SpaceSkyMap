@@ -23,8 +23,8 @@ def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()  # создаёт пользователя
-            return redirect('login')  # после регистрации на страницу логина
+            form.save()  
+            return redirect('login')  
     else:
         form = RegisterForm()
     return render(request, 'main/register.html', {'form': form})
@@ -35,7 +35,7 @@ def login_view(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        # ищем пользователя по email
+        
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -45,9 +45,9 @@ def login_view(request):
             user = authenticate(username=user.username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('home')  # на главную после входа
+                return redirect('home')  
 
-        # если дошли сюда — ошибка
+    
         return render(request, 'main/login.html', {
             'error': 'Incorrect email or password'
         })
