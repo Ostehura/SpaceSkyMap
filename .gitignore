@@ -15,3 +15,14 @@ venv/
 
 # VSCode
 .vscode/
+
+#Pycache
+__pycache__/
+*.pyc
+*.pyo
+
+#DB
+*.sqlite3-bak
+*.sql
+db.sqlite3
+
