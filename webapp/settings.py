@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'api',
     'rest_framework',
+    'events',
     'main',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -156,3 +157,5 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+NASA_API_KEY = "TU_WSTAW_SWÓJ_PRAWDZIWY_KLUCZ_API"
