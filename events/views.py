@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import EventSubscription  # модель подписки, которую мы добавим в models.py
+from .models import EventSubscription  
 from api.nasa_client import get_events_for_location  # moduł integracji z NASA
 
 
@@ -97,9 +97,9 @@ def events_view(request):
     return Response(events, status=status.HTTP_200_OK)
 
 
-# ==========================================================
+# =========================================================
 # 2) Endpoint POST /subscribe – zapisanie subskrypcji
-# ==========================================================
+# =========================================================
 
 
 @api_view(['POST'])
@@ -132,7 +132,7 @@ def subscribe_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # get_or_create – jeśli subskrypcja już istnieje, nie tworzymy duplikatu
+
     sub, created = EventSubscription.objects.get_or_create(
         user=user,
         event_id=event_id,
