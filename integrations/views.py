@@ -1,0 +1,91 @@
+from django.shortcuts import render
+import datetime
+import requests
+import re
+import pandas as pd 
+from typing import Optional
+
+def rows(s, name):
+    if name not in s.columns:
+        return s
+    df = s.dropna(subset=[name])
+    return df
+
+def parse(result_text):
+    csv_lines = []
+    for line in result_text.splitlines():
+        if line.count(",") >= 2:
+            csv_lines.append(line)
+
+    if len(csv_lines) >= 2:
+        rows = [
+            [c.strip() for c in row.split(",")]
+            for row in csv_lines
+            if row.strip()
+        ]
+        return rows
+
+    ws_lines = []
+    for line in result_text.splitlines():
+        parts = re.split(r"\s{2,}", line.strip())
+        if len(parts) >= 2:
+            ws_lines.append(parts)
+
+    if len(ws_lines) >= 2:
+        return ws_lines
+
+    return []
+
+def get_query_sbo(
+    latitude: float,
+    longitude: float,
+    begine_time: datetime.datetime,
+    end_time: datetime.datetime,
+    promien_szukania: Optional[float] = 10.0,
+    jasnosc_max: Optional[float] = 18.0
+) 
+    # 1. Formatowanie daty/czasu do formatu akceptowanego przez API (np. '2025-Nov-25 18:00')
+    time_str = begin_time.strftime("%Y-%b-%d %H:%M")
+    time_str_stop = end_time.strftime("%Y-%b-%d %H:%M")
+
+    # 2. Formatowanie lokalizacji obserwatora: 'geoc=szerokość,długość'
+    # API Horizons często wymaga formatu Długość, Szerokość (np. 'lon,lat')
+    geoc_str = f"'{longitude},{latitude},0'" # Dodano wysokość 0 km n.p.m.
+
+    # 3. Definicja stałego URL bazowego
+    # Chociaż SBO jest częścią Horizons, często zapytania są kierowane do ogólnego API JPL
+    BASE_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+
+    # 4. Konstrukcja parametrów zapytania
+    params = {
+        # Ustawienia podstawowe
+        "format": "json",               # Format odpowiedzi (tekstowy)
+        "COMMAND": "'MB'",               # 'MB' oznacza Listę Małych Ciał (Minor Bodies)
+        "CENTER": geoc_str,              # Lokalizacja obserwatora (lon, lat, elev)
+        "START_TIME": f"'{time_str}'",   # Czas rozpoczęcia obserwacji
+        "STOP_TIME": f"'{time_str_stop}'",    # Czas zakończenia obserwacji
+        "STEP_SIZE": "'1d'",             # Rozmiar kroku (minimalny 1 dzień, ale API użyje START_TIME/STOP_TIME jako punktu)
+        
+        # Formatowanie wyjścia
+        "CSV_FORMAT": "YES",            # Zwraca dane w formacie CSV
+        "OBJ_DATA": "NO",                # Nie zwraca szczegółowych danych obiektu
+        "QUANTITIES": "'1,3,9,19,20'",   # Określenie, jakie efemerydy chcemy (np. RA/Dec, Alt/Az, Jasność)
+    }
+
+    # 5. Łączenie parametrów w URL
+    query_parts = []
+    for key, value in params.items():
+        # Używamy formatu 'key=value'
+        query_parts.append(f"{key}={value}")
+
+    # Finalny URL
+    full_url = f"{BASE_URL}?" + "&".join(query_parts)
+    
+    resp = requests.get(full_url, timeout=30)
+    payload = resp.json()
+    t = payload.get("result")
+    r = parse(t)
+    s = pd.DataFrame(r)
+    p = rows(s, 1)
+    
+    return p
