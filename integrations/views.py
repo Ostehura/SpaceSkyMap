@@ -39,27 +39,14 @@ def parse(result_text):
 def get_query_sbo(
     latitude: float,
     longitude: float,
-    data_czas: datetime.datetime,
+    begine_time: datetime.datetime,
+    end_time: datetime.datetime,
     promien_szukania: Optional[float] = 10.0,
     jasnosc_max: Optional[float] = 18.0
-) -> str:
-    """
-    Generuje URL zapytania do API JPL Horizons/Small-Body Observability.
-
-    Argumenty:
-        latitude (float): Szerokość geograficzna obserwatora (w stopniach, -90 do 90).
-        longitude (float): Długość geograficzna obserwatora (w stopniach, -180 do 180).
-        data_czas (datetime.datetime): Czas obserwacji.
-        promien_szukania (float, opcjonalnie): Promień szukania w stopniach kwadratowych wokół zenitu. Domyślnie 10.0.
-        jasnosc_max (float, opcjonalnie): Maksymalna wielkość gwiazdowa (jasność) do filtrowania. Domyślnie 18.0.
-
-    Zwraca:
-        str: Gotowy URL zapytania do SBO API.
-    """
+) 
     # 1. Formatowanie daty/czasu do formatu akceptowanego przez API (np. '2025-Nov-25 18:00')
-    time_str = data_czas.strftime("%Y-%b-%d %H:%M")
-    data_czas_stop = data_czas + datetime.timedelta(days=1)
-    time_str_stop = data_czas_stop.strftime("%Y-%b-%d %H:%M")
+    time_str = begin_time.strftime("%Y-%b-%d %H:%M")
+    time_str_stop = end_time.strftime("%Y-%b-%d %H:%M")
 
     # 2. Formatowanie lokalizacji obserwatora: 'geoc=szerokość,długość'
     # API Horizons często wymaga formatu Długość, Szerokość (np. 'lon,lat')
@@ -94,7 +81,7 @@ def get_query_sbo(
     # Finalny URL
     full_url = f"{BASE_URL}?" + "&".join(query_parts)
     
-    resp = requests.get(full_url, timeout=TIMEOUT)
+    resp = requests.get(full_url, timeout=30)
     payload = resp.json()
     t = payload.get("result")
     r = parse(t)
