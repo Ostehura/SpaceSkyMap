@@ -1,6 +1,40 @@
 from django.shortcuts import render
 import datetime
+import requests
+import re
+import pandas as pd 
 from typing import Optional
+
+def rows(s, name):
+    if name not in s.columns:
+        return s
+    df = s.dropna(subset=[name])
+    return df
+
+def parse(result_text):
+    csv_lines = []
+    for line in result_text.splitlines():
+        if line.count(",") >= 2:
+            csv_lines.append(line)
+
+    if len(csv_lines) >= 2:
+        rows = [
+            [c.strip() for c in row.split(",")]
+            for row in csv_lines
+            if row.strip()
+        ]
+        return rows
+
+    ws_lines = []
+    for line in result_text.splitlines():
+        parts = re.split(r"\s{2,}", line.strip())
+        if len(parts) >= 2:
+            ws_lines.append(parts)
+
+    if len(ws_lines) >= 2:
+        return ws_lines
+
+    return []
 
 def get_query_sbo(
     latitude: float,
@@ -38,7 +72,7 @@ def get_query_sbo(
     # 4. Konstrukcja parametrów zapytania
     params = {
         # Ustawienia podstawowe
-        "format": "text",               # Format odpowiedzi (tekstowy)
+        "format": "json",               # Format odpowiedzi (tekstowy)
         "COMMAND": "'MB'",               # 'MB' oznacza Listę Małych Ciał (Minor Bodies)
         "CENTER": geoc_str,              # Lokalizacja obserwatora (lon, lat, elev)
         "START_TIME": f"'{time_str}'",   # Czas rozpoczęcia obserwacji
@@ -59,4 +93,12 @@ def get_query_sbo(
 
     # Finalny URL
     full_url = f"{BASE_URL}?" + "&".join(query_parts)
-    return full_url
+    
+    resp = requests.get(full_url, timeout=TIMEOUT)
+    payload = resp.json()
+    t = payload.get("result")
+    r = parse(t)
+    s = pd.DataFrame(r)
+    p = rows(s, 1)
+    
+    return p
