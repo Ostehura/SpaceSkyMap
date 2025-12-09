@@ -8,7 +8,7 @@ from rest_framework import status
 from integrations.views import get_query_sbo # moduł integracji z NASA
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])  
 def events_view(request):
     
@@ -76,7 +76,8 @@ def events_view(request):
             begin_time=start_dt,
             end_time=end_dt,
         )
-    except Exception:
+    except Exception as e:
+        print(e)
         return Response(
             {"detail": "Błąd podczas pobierania danych z modułu NASA."},
             status=status.HTTP_502_BAD_GATEWAY,
