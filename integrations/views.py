@@ -1,6 +1,9 @@
 from django.shortcuts import render
 # fast_batch_visibility.py
 import numpy as np
+import requests
+import pandas as pd
+from integrations.models import SBO
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
 import astropy.units as u
@@ -183,20 +186,13 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
     mask = (alt_deg >= min_alt) & (elong_deg >= min_elong)
 
     windows_raw = detect_windows_from_mask(mask, times)
+    if not windows_raw:
+        return []
     windows_out = []
     for start_iso, end_iso, si, ei in windows_raw:
-        windows_out.append({
-            "latitude": float(ra_deg[si]), #ra_start_deg
-            "longitude": float(dec_deg[si]),#dec_start_deg
-            "begin_time": start_iso, #start_time_iso
-            "end_time": end_iso, #end_time_iso
-            
-            # "ra_end_deg": float(ra_deg[ei]),
-            # "dec_end_deg": float(dec_deg[ei]),
-            # "max_alt_deg": float(np.max(alt_deg[si:ei+1])),
-            # "min_elong_deg": float(np.min(elong_deg[si:ei+1]))
-        })
-    return name, windows_out
+        a = SBO(name = name, latitude = float(ra_deg[si]), longitude = float(dec_deg[si]), begin_time = start_iso, end_time = end_iso)
+        windows_out.append(a)
+    return  windows_out
 
 # ---------- FUNKCJA BATCH (publiczna) ----------
 def visibility_for_many(objects,
@@ -229,16 +225,23 @@ def visibility_for_many(objects,
     # observer location
     location = EarthLocation(lat=observer_lat*u.deg, lon=observer_lon*u.deg, height=observer_elev_m*u.m)
 
-    results = {}
+    results = []
+
+    # for obj in objects:
+    #     windows = _process_one_object(obj, times, times_jd, earth_xyz, location,
+    #                                   min_alt_deg, min_elong_deg)
+    #     if windows:  # only keep objects that have at least one window
+    #         results.extend(windows)
+
 
     # parallel map
     with ThreadPoolExecutor(max_workers=max_workers) as exe:
         futures = [exe.submit(_process_one_object, obj, times, times_jd, earth_xyz, location, min_alt_deg, min_elong_deg)
                    for obj in objects]
         for fut in as_completed(futures):
-            name, windows = fut.result()
+            windows = fut.result()
             if windows:  # only keep objects that have at least one window
-                results[name] = windows
+                results.extend(windows)
     return results
 
 def fetch_sbdb_objects(limit):
@@ -265,19 +268,5 @@ def get_query_sbo(latitude, longitude, begin_time, end_time, elevation=100, limi
                               min_alt_deg=10.0,
                               min_elong_deg=22.0,
                               max_workers=8)
-    print(res)
-    results = pd.DataFrame.from_dict(res, orient='index')
-    
-    dfs = []
-    for klucz_grupy, lista_obiektow in res.items():
-        # 1. Tworzymy DataFrame z listy słowników
-        df_temp = pd.DataFrame(lista_obiektow)
-        # 2. Dodajemy nową kolumnę z kluczem
-        df_temp['Name'] = klucz_grupy
-        # 3. Dodajemy DataFrame do listy
-        dfs.append(df_temp)
-
-    # Łączymy wszystkie mniejsze DataFrames w jeden duży
-    df_wynikowy = pd.concat(dfs, ignore_index=True)
-    
-    return df_wynikowy
+    sbo_list_dict = [obj.to_dict() for obj in res]
+    return sbo_list_dict

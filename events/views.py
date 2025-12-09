@@ -77,7 +77,6 @@ def events_view(request):
             end_time=end_dt,
         )
     except Exception as e:
-        print(e)
         return Response(
             {"detail": "Błąd podczas pobierania danych z modułu NASA."},
             status=status.HTTP_502_BAD_GATEWAY,
