@@ -2,14 +2,16 @@ from datetime import timedelta
 from django.utils import timezone
 
 from .models import EventSubscription
-
+from emailer.service import sendEmail
 
 def send_notification(user, event):
    
     name = user.first_name or ""
     surname = user.last_name or ""
-    event_name = event.get("event_id")
-    begin_time = event.get("event_time")
+    event_name = event.event_id
+    begin_time = event.event_time
+    
+    title = f"Reminder: {event_name}"
 
     message = (
         f"Dear {name} {surname}, we would like to remind you that {event_name} "
@@ -18,7 +20,7 @@ def send_notification(user, event):
         f"Best regards, The SkyMap team."
     )
 
-    print(message)
+    sendEmail(user.email, title, message)
     
     
     
