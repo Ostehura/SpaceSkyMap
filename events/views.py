@@ -5,24 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import EventSubscription  
-from api.nasa_client import get_events_for_location  # moduł integracji z NASA
+from integrations.views import get_query_sbo # moduł integracji z NASA
 
 
-
-# ==========================================================
-# 1) Endpoint GET /events – pobieranie wydarzeń z NASA
-# ==========================================================
-
-def parse_iso(dt_str: str):
-        
-        try:
-            return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        except ValueError:
-            return None
-        
-
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])  
 def events_view(request):
     
@@ -76,13 +62,13 @@ def events_view(request):
         )
 
     try:
-        events = get_events_for_location(
+        events = get_query_sbo(
             latitude=lat,
             longitude=lon,
             begin_time=start_dt,
             end_time=end_dt,
         )
-    except Exception:
+    except Exception as e:
         return Response(
             {"detail": "Błąd podczas pobierania danych z modułu NASA."},
             status=status.HTTP_502_BAD_GATEWAY,
