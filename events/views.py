@@ -9,6 +9,7 @@ from rest_framework import status
 from integrations.views import get_query_sbo # moduł integracji z NASA
 from .models import EventSubscription  
 
+from django.utils import timezone
 
 
 # ==========================================================
@@ -125,6 +126,9 @@ def subscribe_view(request):
             {"detail": "event_time musi być w formacie ISO 8601."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    
+    if timezone.is_naive(event_time):
+        event_time = timezone.make_aware(event_time)
 
     event_id = f"{event_name}:{event_time_str}"
 
