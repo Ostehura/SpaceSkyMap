@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from rest_framework.decorators import api_view, permission_classes
@@ -6,8 +7,23 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from integrations.views import get_query_sbo # moduł integracji z NASA
+from .models import EventSubscription  
 
 
+
+# ==========================================================
+
+# 1) Endpoint GET /events – pobieranie wydarzeń z NASA
+# ==========================================================
+
+def parse_iso(dt_str: str):
+        
+        try:
+            return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        
+        
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  
 def events_view(request):
@@ -91,23 +107,15 @@ def events_view(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def subscribe_view(request):
-    """
-    POST /subscribe
-    Body JSON:
-    {
-        "event_id": "ISS-2025-11-24-18-30",
-        "event_time": "2025-11-24T18:30:00Z"
-    }
-    """
     user = request.user
     data = request.data
 
-    event_id = data.get("event_id")
+    event_name = data.get("event_name")
     event_time_str = data.get("event_time")
 
-    if not event_id or not event_time_str:
+    if not event_name or not event_time_str:
         return Response(
-            {"detail": "Pola 'event_id' i 'event_time' są wymagane."},
+            {"detail": "Pola 'event_name' i 'event_time' są wymagane."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -118,6 +126,7 @@ def subscribe_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    event_id = f"{event_name}:{event_time_str}"
 
     sub, created = EventSubscription.objects.get_or_create(
         user=user,
@@ -126,10 +135,14 @@ def subscribe_view(request):
     )
 
     if not created:
-        return Response({"detail": "Użytkownik jest już zapisany na to wydarzenie."},
-                        status=status.HTTP_200_OK)
+        return Response(
+            {"detail": "Użytkownik jest już zapisany na to wydarzenie."},
+            status=status.HTTP_200_OK,
+        )
 
-    return Response({"detail": "Subskrypcja zapisana pomyślnie."},
-                    status=status.HTTP_201_CREATED)
+    return Response(
+        {"detail": "Subskrypcja zapisana pomyślnie."},
+        status=status.HTTP_201_CREATED,
+    )
 
 
