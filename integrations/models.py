@@ -9,6 +9,7 @@ class SBO(models.Model):
     azimuth = models.FloatField()
     begin_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    points12 = models.JSONField(null=True, blank=True)
     
     def to_dict(self):
         return {
@@ -18,7 +19,8 @@ class SBO(models.Model):
             "altitude": self.altitude,
             "azimuth": self.azimuth,
             "begin_time": self.begin_time,
-            "end_time": self.end_time
+            "end_time": self.end_time,
+            "points12": self.points12
         }
     
     def __str__(self):

@@ -166,6 +166,37 @@ def detect_windows_from_mask(mask, times):
         windows.append((times[s].iso, times[e].iso, int(s), int(e)))
     return windows
 
+# ---------- FUNKCJA POMOCNICZA DLA 12 PUNKTÓW (publiczna) ----------
+
+def hourly_points_12(orb, t0, location):
+    """
+    Zwraca 12 punktów pozycji RA/Dec/Alt/Az co godzinę od t0.
+    """
+    times12 = t0 + np.arange(12) * u.hour
+    times12_jd = times12.jd
+
+    X, Y, Z, r = orbit_xyz_vectorized(float(orb["a"]), float(orb["e"]),
+                                      float(orb["i"]), float(orb["om"]),
+                                      float(orb["w"]), float(orb["ma"]),
+                                      float(orb["epoch"]), times12_jd)
+
+    earth_xyz12 = earth_heliocentric_positions(times12_jd)
+
+    ra, dec, alt, az, _ = compute_radec_alt_for_vector(
+        X, Y, Z, earth_xyz12, times12, location
+    )
+
+    pts = []
+    for k in range(12):
+        pts.append({
+            "time": times12[k].iso,
+            "ra": float(ra[k]),
+            "dec": float(dec[k]),
+            # "alt": float(alt[k]),
+            # "az": float(az[k]),
+        })
+    return pts
+
 # ---------- SZYBKA FUNKCJA DLA JEDNEGO OBIEKTU (wewnętrzna) ----------
 def _process_one_object(orb, times, times_jd, earth_xyz, location,
                         min_alt, min_elong):
@@ -191,11 +222,15 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
     windows_raw = detect_windows_from_mask(mask, times)
     if not windows_raw:
         return []
+    
+    points12 = hourly_points_12(orb, times[0], location)
+    
     windows_out = []
     for start_iso, end_iso, si, ei in windows_raw:
         a = SBO(name = name, latitude = float(ra_deg[si]), longitude = float(dec_deg[si]), 
                  altitude = float(alt_deg[si]), azimuth = float(az_deg[si]), 
                 begin_time = start_iso, end_time = end_iso)
+        
         windows_out.append(a)
     return  windows_out
 
