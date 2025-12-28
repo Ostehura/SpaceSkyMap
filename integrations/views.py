@@ -100,7 +100,7 @@ def compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location):
     times: astropy Time array (len N)
     location: EarthLocation
     Returns:
-      ra_deg, dec_deg, alt_deg, elong_deg  (arrays length N)
+      ra_deg, dec_deg, alt_deg, az_deg, elong_deg  (arrays length N)
     All angles in degrees.
     """
     # geocentric vector (object from earth)
@@ -127,6 +127,9 @@ def compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location):
 
     lat_rad = np.deg2rad(location.lat.value)
     alt = np.arcsin(np.sin(lat_rad)*np.sin(dec) + np.cos(lat_rad)*np.cos(dec)*np.cos(ha))
+    
+    az = np.arctan2(-np.sin(ha), np.tan(dec)*np.cos(lat_rad) - np.sin(lat_rad)*np.cos(ha))
+    az = np.mod(az, 2*np.pi)
 
     # elongation: angle Sun-Earth-Object (approx): angle between (obj - earth) and (-earth)
     sun_to_earth = -earth_xyz  # shape (3,N)
@@ -138,7 +141,7 @@ def compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location):
     cos_elong = np.clip(cos_elong, -1.0, 1.0)
     elong = np.arccos(cos_elong)
 
-    return np.rad2deg(ra), np.rad2deg(dec), np.rad2deg(alt), np.rad2deg(elong)
+    return np.rad2deg(ra), np.rad2deg(dec), np.rad2deg(alt), np.rad2deg(az), np.rad2deg(elong)
 
 # ---------- DETEKCJA OKIEN (wektorowo) ----------
 def detect_windows_from_mask(mask, times):
@@ -163,6 +166,37 @@ def detect_windows_from_mask(mask, times):
         windows.append((times[s].iso, times[e].iso, int(s), int(e)))
     return windows
 
+# ---------- FUNKCJA POMOCNICZA DLA 12 PUNKTÓW (publiczna) ----------
+
+def hourly_points_12(orb, t0, location):
+    """
+    Zwraca 12 punktów pozycji RA/Dec/Alt/Az co godzinę od t0.
+    """
+    times12 = t0 + np.arange(12) * u.hour
+    times12_jd = times12.jd
+
+    X, Y, Z, r = orbit_xyz_vectorized(float(orb["a"]), float(orb["e"]),
+                                      float(orb["i"]), float(orb["om"]),
+                                      float(orb["w"]), float(orb["ma"]),
+                                      float(orb["epoch"]), times12_jd)
+
+    earth_xyz12 = earth_heliocentric_positions(times12_jd)
+
+    ra, dec, alt, az, _ = compute_radec_alt_for_vector(
+        X, Y, Z, earth_xyz12, times12, location
+    )
+
+    pts = []
+    for k in range(12):
+        pts.append({
+            "time": times12[k].iso,
+            "ra": float(ra[k]),
+            "dec": float(dec[k]),
+            # "alt": float(alt[k]),
+            # "az": float(az[k]),
+        })
+    return pts
+
 # ---------- SZYBKA FUNKCJA DLA JEDNEGO OBIEKTU (wewnętrzna) ----------
 def _process_one_object(orb, times, times_jd, earth_xyz, location,
                         min_alt, min_elong):
@@ -180,7 +214,7 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
         # if any problem with params, return empty
         return name, []
 
-    ra_deg, dec_deg, alt_deg, elong_deg = compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location)
+    ra_deg, dec_deg, alt_deg, az_deg, elong_deg = compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location)
 
     # mask criteria (tuneable)
     mask = (alt_deg >= min_alt) & (elong_deg >= min_elong)
@@ -188,9 +222,15 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
     windows_raw = detect_windows_from_mask(mask, times)
     if not windows_raw:
         return []
+    
+    points12 = hourly_points_12(orb, times[0], location)
+    
     windows_out = []
     for start_iso, end_iso, si, ei in windows_raw:
-        a = SBO(name = name, latitude = float(ra_deg[si]), longitude = float(dec_deg[si]), begin_time = start_iso, end_time = end_iso)
+        a = SBO(name = name, latitude = float(ra_deg[si]), longitude = float(dec_deg[si]), 
+                 altitude = float(alt_deg[si]), azimuth = float(az_deg[si]), 
+                begin_time = start_iso, end_time = end_iso)
+        
         windows_out.append(a)
     return  windows_out
 
