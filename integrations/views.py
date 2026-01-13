@@ -229,7 +229,7 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
     for start_iso, end_iso, si, ei in windows_raw:
         a = SBO(name = name, latitude = float(ra_deg[si]), longitude = float(dec_deg[si]), 
                  altitude = float(alt_deg[si]), azimuth = float(az_deg[si]), 
-                begin_time = start_iso, end_time = end_iso)
+                begin_time = start_iso, end_time = end_iso, points12=points12)
         
         windows_out.append(a)
     return  windows_out
@@ -309,4 +309,5 @@ def get_query_sbo(latitude, longitude, begin_time, end_time, elevation=100, limi
                               min_elong_deg=22.0,
                               max_workers=8)
     sbo_list_dict = [obj.to_dict() for obj in res]
+    print(sbo_list_dict)
     return sbo_list_dict
