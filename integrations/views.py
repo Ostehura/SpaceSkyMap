@@ -107,6 +107,13 @@ def compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location):
     gx = X - earth_xyz[0]
     gy = Y - earth_xyz[1]
     gz = Z - earth_xyz[2]
+    
+    # distance Earth-object [AU]
+    dist_au = np.sqrt(gx*gx + gy*gy + gz*gz)
+
+    # convert to km
+    AU_TO_KM = 149_597_870.7
+    dist_km = dist_au * AU_TO_KM # nieuzwane --- IGNORE ---
 
     # RA/DEC
     ra = np.arctan2(gy, gx)  # rad
@@ -141,7 +148,7 @@ def compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location):
     cos_elong = np.clip(cos_elong, -1.0, 1.0)
     elong = np.arccos(cos_elong)
 
-    return np.rad2deg(ra), np.rad2deg(dec), np.rad2deg(alt), np.rad2deg(az), np.rad2deg(elong)
+    return np.rad2deg(ra), np.rad2deg(dec), np.rad2deg(alt), np.rad2deg(az), np.rad2deg(elong), dist_au
 
 # ---------- DETEKCJA OKIEN (wektorowo) ----------
 def detect_windows_from_mask(mask, times):
@@ -182,7 +189,7 @@ def hourly_points_12(orb, t0, location):
 
     earth_xyz12 = earth_heliocentric_positions(times12_jd)
 
-    ra, dec, alt, az, _ = compute_radec_alt_for_vector(
+    ra, dec, alt, az, _, dist = compute_radec_alt_for_vector(
         X, Y, Z, earth_xyz12, times12, location
     )
 
@@ -192,6 +199,7 @@ def hourly_points_12(orb, t0, location):
             "time": times12[k].iso,
             "ra": float(ra[k]),
             "dec": float(dec[k]),
+            "dist": float(dist[k]),
             # "alt": float(alt[k]),
             # "az": float(az[k]),
         })
@@ -214,7 +222,7 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
         # if any problem with params, return empty
         return name, []
 
-    ra_deg, dec_deg, alt_deg, az_deg, elong_deg = compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location)
+    ra_deg, dec_deg, alt_deg, az_deg, elong_deg, dist = compute_radec_alt_for_vector(X, Y, Z, earth_xyz, times, location)
 
     # mask criteria (tuneable)
     mask = (alt_deg >= min_alt) & (elong_deg >= min_elong)
@@ -229,7 +237,7 @@ def _process_one_object(orb, times, times_jd, earth_xyz, location,
     for start_iso, end_iso, si, ei in windows_raw:
         a = SBO(name = name, latitude = float(ra_deg[si]), longitude = float(dec_deg[si]), 
                  altitude = float(alt_deg[si]), azimuth = float(az_deg[si]), 
-                begin_time = start_iso, end_time = end_iso, points12=points12)
+                begin_time = start_iso, end_time = end_iso, points12=points12, distance = float(dist[si]))
         
         windows_out.append(a)
     return  windows_out
@@ -309,5 +317,5 @@ def get_query_sbo(latitude, longitude, begin_time, end_time, elevation=100, limi
                               min_elong_deg=22.0,
                               max_workers=8)
     sbo_list_dict = [obj.to_dict() for obj in res]
-    print(sbo_list_dict)
+    # print(sbo_list_dict)
     return sbo_list_dict
