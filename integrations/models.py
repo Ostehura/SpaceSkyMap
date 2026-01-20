@@ -21,7 +21,7 @@ class SBO(models.Model):
             "azimuth": self.azimuth,
             "begin_time": self.begin_time,
             "end_time": self.end_time,
-            "points12": self.points12
+            "points12": self.points12,
             "distance": self.distance
         }
     
