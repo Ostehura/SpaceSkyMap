@@ -13,7 +13,6 @@ from django.utils import timezone
 
 
 # ==========================================================
-
 # 1) Endpoint GET /events – pobieranie wydarzeń z NASA
 # ==========================================================
 
