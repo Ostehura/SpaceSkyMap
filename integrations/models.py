@@ -1,15 +1,37 @@
 from django.db import models
+import json
 
 class SBO(models.Model):
+    name = models.CharField(max_length=100)
     latitude = models.FloatField()
     longitude = models.FloatField()
-    data_czas = models.DateTimeField()
-    promien_szukania = models.FloatField(default=10.0)
-    jasnosc_max = models.FloatField(default=18.0)
-
+    altitude = models.FloatField()
+    azimuth = models.FloatField()
+    begin_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    points12 = models.JSONField(null=True, blank=True)
+    distance = models.FloatField(null=True, blank=True)
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "altitude": self.altitude,
+            "azimuth": self.azimuth,
+            "begin_time": self.begin_time,
+            "end_time": self.end_time,
+            "points12": self.points12,
+            "distance": self.distance
+        }
+    
     def __str__(self):
-        return f"SBO at ({self.latitude}, {self.longitude}) on {self.data_czas}"    promien_szukania: Optional[float] = 10.0,
-     jasnosc_max: Optional[float] = 18.0
- ) -> str:
-     """
-     Generuje URL zapytania do API JPL Horizons/Small-Body Observability.
+        return (
+            f"SBO(name={self.name}, "
+            f"ra={self.latitude:.4f}°, "
+            f"dec={self.longitude:.4f}°, "
+            f"alt={self.altitude:.4f}°, "
+            f"az={self.azimuth:.4f}°, "
+            f"begin={self.begin_time}, "
+            f"end={self.end_time})"
+        )
