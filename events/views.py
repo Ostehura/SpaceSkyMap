@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from rest_framework.decorators import api_view, permission_classes
@@ -6,8 +7,23 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from integrations.views import get_query_sbo # moduł integracji z NASA
+from .models import EventSubscription  
 
 
+
+# ==========================================================
+
+# 1) Endpoint GET /events – pobieranie wydarzeń z NASA
+# ==========================================================
+
+def parse_iso(dt_str: str):
+        
+        try:
+            return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        
+        
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  
 def events_view(request):
@@ -46,14 +62,6 @@ def events_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    
-    def parse_iso(dt_str: str):
-        
-        try:
-            return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        except ValueError:
-            return None
-
     start_dt = parse_iso(begin_time)
     end_dt = parse_iso(end_time)
 
@@ -89,3 +97,52 @@ def events_view(request):
         )
 
     return Response(events, status=status.HTTP_200_OK)
+
+
+# =========================================================
+# 2) Endpoint POST /subscribe – zapisanie subskrypcji
+# =========================================================
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscribe_view(request):
+    user = request.user
+    data = request.data
+
+    event_name = data.get("event_name")
+    event_time_str = data.get("event_time")
+
+    if not event_name or not event_time_str:
+        return Response(
+            {"detail": "Pola 'event_name' i 'event_time' są wymagane."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    event_time = parse_iso(event_time_str)
+    if event_time is None:
+        return Response(
+            {"detail": "event_time musi być w formacie ISO 8601."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    event_id = f"{event_name}:{event_time_str}"
+
+    sub, created = EventSubscription.objects.get_or_create(
+        user=user,
+        event_id=event_id,
+        defaults={"event_time": event_time},
+    )
+
+    if not created:
+        return Response(
+            {"detail": "Użytkownik jest już zapisany na to wydarzenie."},
+            status=status.HTTP_200_OK,
+        )
+
+    return Response(
+        {"detail": "Subskrypcja zapisana pomyślnie."},
+        status=status.HTTP_201_CREATED,
+    )
+
+
