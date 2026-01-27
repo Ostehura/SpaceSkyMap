@@ -164,7 +164,7 @@ CORS_ALLOW_HEADERS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    "https://space-sky-front.vercel.app/",
+    "space-sky-front.vercel.app",
 ]
 
 
@@ -175,7 +175,7 @@ CORS_ALLOW_METHODS = [
     "PATCH",
 ]
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1","space-sky-front.vercel.app","space-sky-front.vercel.app"]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
