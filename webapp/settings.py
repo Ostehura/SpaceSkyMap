@@ -151,6 +151,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://space-sky-front.vercel.app/",
+    "https://spaceskymap.onrender.com/admin"
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -164,7 +165,8 @@ CORS_ALLOW_HEADERS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    "space-sky-front.vercel.app",
+    "https:://space-sky-front.vercel.app",
+    "https://spaceskymap.onrender.com/admin"
 ]
 
 
@@ -175,7 +177,7 @@ CORS_ALLOW_METHODS = [
     "PATCH",
 ]
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1","space-sky-front.vercel.app","space-sky-front.vercel.app"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1","space-sky-front.vercel.app","https://space-sky-front.vercel.app","https://spaceskymap.onrender.com/admin","spaceskymap.onrender.com/admin"]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
