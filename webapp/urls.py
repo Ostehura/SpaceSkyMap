@@ -18,13 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from main.views import login_view
 from events.views import events_view
-
+from events.views import subscribe_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('main.urls')),
     path('api/', include('api.urls')),
     path('events/', events_view, name='events'),
-
+    path('subscribe/', subscribe_view, name='subscribe'),
     
 ]
