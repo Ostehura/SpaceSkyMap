@@ -166,6 +166,7 @@ CORS_ALLOW_METHODS = [
     "GET",
     "POST",
     "OPTIONS",
+    "PATCH",
 ]
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
