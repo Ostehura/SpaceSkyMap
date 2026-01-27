@@ -2,3 +2,8 @@ django
 djangorestframework
 django-cors-headers
 djangorestframework-simplejwt
+python-dotenv
+numpy
+requests
+pandas
+astropy
