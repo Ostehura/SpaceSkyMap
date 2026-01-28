@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-wdgrvbbx)eeu8*!(=ede*_$7&613(h^yvkdzuc@lay0jfp8q62'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -88,8 +88,12 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME':os.getenv('POSTGRES_DB'),
+        'USER':os.getenv('POSTGRES_USER'),
+        'PASSWORD':os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT',5432)
     }
 }
 
@@ -150,8 +154,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://space-sky-front.vercel.app",
+    "https://spaceskymap.onrender.com"
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://space-sky-front(-[a-z0-9-]+)?\.vercel\.app$",
+]
 
 CORS_ALLOW_HEADERS = [
     "content-type",
@@ -160,7 +169,10 @@ CORS_ALLOW_HEADERS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "https:://space-sky-front.vercel.app",
+    "https://spaceskymap.onrender.com"
 ]
+
 
 CORS_ALLOW_METHODS = [
     "GET",
@@ -169,7 +181,7 @@ CORS_ALLOW_METHODS = [
     "PATCH",
 ]
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1","space-sky-front.vercel.app","spaceskymap.onrender.com"]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

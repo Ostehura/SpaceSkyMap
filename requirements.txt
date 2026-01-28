@@ -7,3 +7,5 @@ numpy
 requests
 pandas
 astropy
+gunicorn
+psycopg[binary,pool]
